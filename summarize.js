@@ -1,47 +1,38 @@
 const axios = require('axios');
-// This is the function where the call to the API is made. Returns the summarized text as a string.
+require('dotenv').config(); // Ensure environment variables are loaded
 
 async function summarizeText(text) {
-
-
-  
-
-  // INSERT CODE SNIPPET FROM POSTMAN BELOW
-  
-  let data = JSON.stringify({
-    "inputs": text,
-    "parameters": {
-      "max_length": 100,
-      "min_length": 30
+  const data = JSON.stringify({
+    inputs: text,
+    parameters: {
+      max_length: 100,
+      min_length: 30
     }
   });
 
-  let config = {
+  const config = {
     method: 'post',
     maxBodyLength: Infinity,
     url: 'https://api-inference.huggingface.co/models/facebook/bart-large-cnn',
     headers: { 
       'Content-Type': 'application/json', 
-      'Authorization': 'Bearer' + process.env['ACCESS_TOKEN']
+      'Authorization': `Bearer ${process.env['ACCESS_TOKEN']}`
     },
-    data : data
+    data
   };
 
- 
   try {
-      const response = await axios.request(config);
-      return response.data[0].summary_text;
+    const response = await axios.request(config);
+    console.log('API Response:', response.data); // Log full response for debugging
+    return response.data[0].summary_text; // Adjust based on actual API response
+  } catch (error) {
+    if (error.response) {
+      console.error(`Error: ${error.response.status} - ${error.response.statusText}`);
+      console.error(error.response.data);
+    } else if (error.request) {
+      console.error('No response received:', error.request);
+    } else {
+      console.error('Error in request setup:', error.message);
     }
-  catch (error) {
-      console.log(error);
-    }
- 
-
-
-
-
-}
-
-// Allows for summarizeText() to be called outside of this file
-
-module.exports = summarizeText;
+    throw error; // Re-throw to handle it upstream
+  }
