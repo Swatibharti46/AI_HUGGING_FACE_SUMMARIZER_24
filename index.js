@@ -1,35 +1,46 @@
 const express = require('express');
+const cors = require('cors'); // Import cors for cross-origin requests
 
 const app = express();
 
-const port = 3000;
+// Use the PORT environment variable or default to 3000
+const port = process.env.PORT || 3000;
 
+// Import your summarizeText function
 const summarizeText = require('./summarize.js');
-// Parses JSON bodies (as sent by API clients)
+
+// Enable CORS for all origins
+app.use(cors());
+
+// Parse JSON bodies (as sent by API clients)
 app.use(express.json());
 
-app.use(express.static('public')); 
-
-// Serves static files from the 'public' directory
-
+// Serve static files from the 'public' directory
+app.use(express.static('public'));
 
 // Handle POST requests to the '/summarize' endpoint
+app.post('/summarize', async (req, res) => {
+  try {
+    const text = req.body.text_to_summarize;
+    if (!text) {
+      return res.status(400).json({ error: 'text_to_summarize is required' });
+    }
 
-app.post('/summarize', (req, res) => {
- // get the text_to_summarize property from the request body
-  const text = req.body.text_to_summarize;
-
-  // call your summarizeText function, passing in the text from the request
-  summarizeText(text)
-    .then(response => {
-      res.send(response); // Send the summary text as a response
-    })
-    .catch(error => {
-      console.log(error.message);
-    });
+    // Call your summarizeText function
+    const summary = await summarizeText(text);
+    res.json({ summary });
+  } catch (error) {
+    console.error('Error summarizing text:', error.message);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
 });
 
-// Start the server
-app.listen(port, () => {
-  console.log('Server running at http://localhost:${port}/');
-});
+// Start the server (only for development or Replit)
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log(`Server running at http://localhost:${port}/`);
+  });
+}
+
+// Export the app for Vercel
+module.exports = app;
